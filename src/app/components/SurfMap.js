@@ -25,7 +25,7 @@ L.Icon.Default.mergeOptions({
 
 export default function SurfMap({ spots, onSpotSelect, selectedSpot }) {
   // 2. State to control the heavy wind layer (Default to FALSE to save CPU)
-  const [showWind, setShowWind] = useState(false);
+  const [showWind, setShowWind] = useState(true);
 
   return (
     <div className="relative w-full h-full">
