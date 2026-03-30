@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "framer-motion": "^12.31.0",
     "leaflet": "^1.9.4",
     "leaflet-velocity": "^2.1.4",
     "next": "16.1.6",

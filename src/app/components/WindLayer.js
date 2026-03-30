@@ -9,12 +9,14 @@ export default function WindLayer() {
   const map = useMap();
 
   useEffect(() => {
-    let velocityLayer; // Create a variable to hold the layer instance
+    let velocityLayer;
+    let isMounted = true;
 
     fetch("https://onaci.github.io/leaflet-velocity/wind-global.json")
       .then((response) => response.json())
       .then((data) => {
-        // Initialize the layer
+        if (!isMounted) return;
+
         velocityLayer = L.velocityLayer({
           displayValues: true,
           displayOptions: {
@@ -27,19 +29,19 @@ export default function WindLayer() {
           velocityScale: 0.005,
         });
 
-        // Add it to the map
         velocityLayer.addTo(map);
       })
       .catch((err) => console.error("Could not load wind data", err));
 
-    // --- THE FIX: CLEANUP FUNCTION ---
     return () => {
+      isMounted = false;
       if (velocityLayer) {
-        console.log("🌪️ Removing Wind Layer from Leaflet map...");
-        map.removeLayer(velocityLayer);
+        try {
+          map.removeLayer(velocityLayer);
+        } catch (e) {
+          // Layer might already be removed
+        }
 
-        // Leaflet-velocity adds a canvas to the map pane.
-        // We ensure any stray canvas elements are removed.
         const velocityCanvas = document.querySelector(".velocity-overlay");
         if (velocityCanvas) velocityCanvas.remove();
       }

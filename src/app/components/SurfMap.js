@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react"; // <--- 1. Import useState
+import { useState, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -12,7 +12,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import WindLayer from "./WindLayer";
 
-// Fix for default Leaflet icons (keep this)
+// Fix for default Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -23,29 +23,43 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-export default function SurfMap({ spots, onSpotSelect, selectedSpot }) {
-  // 2. State to control the heavy wind layer (Default to FALSE to save CPU)
+export default function SurfMap({ spots, onSpotSelect, selectedSpot, flyToSpot, setFlyToSpot }) {
   const [showWind, setShowWind] = useState(true);
+  const mapRef = useRef(null);
+
+  // Handle fly-to from search
+  useEffect(() => {
+    if (flyToSpot && mapRef.current) {
+      mapRef.current.flyTo([flyToSpot.lat, flyToSpot.lng], 10, {
+        duration: 1.5,
+      });
+      setFlyToSpot(null);
+    }
+  }, [flyToSpot, setFlyToSpot]);
 
   return (
     <div className="relative w-full h-full">
-      {/* 3. Custom Toggle Button (Top Right) */}
+      {/* Wind Toggle Button */}
       <button
         onClick={() => setShowWind(!showWind)}
-        className={`absolute top-4 right-14 z-[1000] px-4 py-2 rounded-lg font-bold text-sm shadow-xl transition-all border ${
-          showWind
+        className={`absolute top-4 right-14 z-[1000] px-4 py-2 rounded-lg font-bold text-sm shadow-xl transition-all border ${showWind
             ? "bg-cyan-500 text-black border-cyan-400 hover:bg-cyan-400"
             : "bg-slate-900/90 text-slate-400 border-slate-700 hover:bg-slate-800 hover:text-white"
-        }`}
+          }`}
       >
         {showWind ? "🌪️ Wind: ON" : "🌪️ Wind: OFF"}
       </button>
 
       <MapContainer
+        ref={mapRef}
         center={[27.46, -80.32]}
         zoom={6}
         zoomControl={false}
         style={{ height: "100%", width: "100%", background: "#0f172a" }}
+        // Add these props to help with cleanup
+        whenCreated={(map) => {
+          mapRef.current = map;
+        }}
       >
         <ZoomControl position="topright" />
 
@@ -64,8 +78,6 @@ export default function SurfMap({ spots, onSpotSelect, selectedSpot }) {
           </LayersControl.BaseLayer>
         </LayersControl>
 
-        {/* 4. Conditionally Render WindLayer */}
-        {/* If showWind is false, this component unmounts and stops the WebGL loop completely */}
         {showWind && <WindLayer />}
 
         {spots.map((spot, idx) => {
@@ -74,11 +86,12 @@ export default function SurfMap({ spots, onSpotSelect, selectedSpot }) {
             <CircleMarker
               key={idx}
               center={[spot.lat, spot.lng]}
-              radius={isSelected ? 8 : 5}
+              radius={isSelected ? 10 : 6}
               pathOptions={{
                 color: isSelected ? "#4ade80" : "#38bdf8",
                 fillColor: isSelected ? "#4ade80" : "#38bdf8",
-                fillOpacity: 0.7,
+                fillOpacity: isSelected ? 0.9 : 0.7,
+                weight: isSelected ? 3 : 2,
               }}
               eventHandlers={{ click: () => onSpotSelect(spot.name) }}
             >
